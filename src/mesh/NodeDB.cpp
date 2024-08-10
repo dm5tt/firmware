@@ -356,16 +356,19 @@ void NodeDB::installDefaultConfig(bool preserveKey = false)
     config.has_bluetooth = (HAS_BLUETOOTH ? true : false);
     config.has_security = true;
     config.device.rebroadcast_mode = meshtastic_Config_DeviceConfig_RebroadcastMode_ALL;
+    config.device.role = meshtastic_Config_DeviceConfig_Role_CLIENT;
+    config.lora.region = meshtastic_Config_LoRaConfig_RegionCode_EU_868;
+    moduleConfig.telemetry.environment_measurement_enabled = true;
+    config.power.is_power_saving = true;
 
     config.lora.sx126x_rx_boosted_gain = true;
     config.lora.tx_enabled =
         true; // FIXME: maybe false in the future, and setting region to enable it. (unset region forces it off)
     config.lora.override_duty_cycle = false;
-    config.lora.config_ok_to_mqtt = false;
+    config.lora.config_ok_to_mqtt = true;
 #ifdef USERPREFS_CONFIG_LORA_REGION
     config.lora.region = USERPREFS_CONFIG_LORA_REGION;
 #else
-    config.lora.region = meshtastic_Config_LoRaConfig_RegionCode_UNSET;
 #endif
 #ifdef USERPREFS_LORACONFIG_MODEM_PRESET
     config.lora.modem_preset = USERPREFS_LORACONFIG_MODEM_PRESET;
@@ -421,7 +424,7 @@ void NodeDB::installDefaultConfig(bool preserveKey = false)
     resetRadioConfig();
     strncpy(config.network.ntp_server, "meshtastic.pool.ntp.org", 32);
     // FIXME: Default to bluetooth capability of platform as default
-    config.bluetooth.enabled = true;
+    config.bluetooth.enabled = false;
     config.bluetooth.fixed_pin = defaultBLEPin;
 #if defined(ST7735_CS) || defined(USE_EINK) || defined(ILI9341_DRIVER) || defined(ILI9342_DRIVER) || defined(ST7789_CS) ||       \
     defined(HX8357_CS) || defined(USE_ST7789)
