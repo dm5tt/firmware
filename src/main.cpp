@@ -116,6 +116,9 @@ AudioThread *audioThread = nullptr;
 float tcxoVoltage = SX126X_DIO3_TCXO_VOLTAGE; // if TCXO is optional, put this here so it can be changed further down.
 #endif
 
+#include "soc/rtc_cntl_reg.h"
+#include "soc/soc.h"
+
 using namespace concurrency;
 
 // We always create a screen object, but we only init it if we find the hardware
@@ -239,6 +242,10 @@ void printInfo()
 #ifndef PIO_UNIT_TESTING
 void setup()
 {
+
+    REG_SET_BIT(RTC_CNTL_BROWN_OUT_REG, RTC_CNTL_BROWN_OUT_ENA); // Enable brownout
+    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 7);                   // Set threshold to max (3.0V)
+
     concurrency::hasBeenSetup = true;
 #if ARCH_PORTDUINO
     SPISettings spiSettings(settingsMap[spiSpeed], MSBFIRST, SPI_MODE0);
