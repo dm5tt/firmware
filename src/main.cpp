@@ -116,9 +116,6 @@ AudioThread *audioThread = nullptr;
 float tcxoVoltage = SX126X_DIO3_TCXO_VOLTAGE; // if TCXO is optional, put this here so it can be changed further down.
 #endif
 
-#include "soc/rtc_cntl_reg.h"
-#include "soc/soc.h"
-
 using namespace concurrency;
 
 // We always create a screen object, but we only init it if we find the hardware
@@ -176,6 +173,29 @@ std::pair<uint8_t, TwoWire *> nodeTelemetrySensorsMap[_meshtastic_TelemetrySenso
 #endif
 
 Router *router = NULL; // Users of router don't care what sort of subclass implements that API
+
+#include "hal/brownout_hal.h"
+
+void configure_brownout(void *pvParameters)
+{
+    // Warte 10 Sekunden (10000 ms)
+    vTaskDelay(10000 / portTICK_PERIOD_MS);
+
+    // Konfiguriere den Brownout-Detektor
+    brownout_hal_config_t cfg = {
+        .threshold = 4,
+        .enabled = true,
+        .reset_enabled = true,
+        .flash_power_down = true,
+        .rf_power_down = true,
+    };
+    brownout_hal_config(&cfg);
+
+    LOG_INFO("WATCHDOG SHARP!");
+
+    // Task beenden, da wir ihn nicht weiter brauchen
+    vTaskDelete(NULL);
+}
 
 const char *getDeviceName()
 {
@@ -240,12 +260,9 @@ void printInfo()
     LOG_INFO("S:B:%d,%s\n", HW_VENDOR, optstr(APP_VERSION));
 }
 #ifndef PIO_UNIT_TESTING
+
 void setup()
 {
-
-    REG_SET_BIT(RTC_CNTL_BROWN_OUT_REG, RTC_CNTL_BROWN_OUT_ENA); // Enable brownout
-    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 7);                   // Set threshold to max (3.0V)
-
     concurrency::hasBeenSetup = true;
 #if ARCH_PORTDUINO
     SPISettings spiSettings(settingsMap[spiSpeed], MSBFIRST, SPI_MODE0);
@@ -1077,7 +1094,9 @@ void setup()
     // This must be _after_ service.init because we need our preferences loaded from flash to have proper timeout values
     PowerFSM_setup(); // we will transition to ON in a couple of seconds, FIXME, only do this for cold boots, not waking from SDS
     powerFSMthread = new PowerFSMThread();
-    setCPUFast(false); // 80MHz is fine for our slow peripherals
+    setCPUFast(false); // 80MHz is fine for our slow peripheral
+
+    xTaskCreate(configure_brownout, "configure_brownout", 2048, NULL, 1, NULL);
 }
 #endif
 uint32_t rebootAtMsec;   // If not zero we will reboot at this time (used to reboot shortly after the update completes)
