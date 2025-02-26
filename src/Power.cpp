@@ -13,12 +13,15 @@
 #include "power.h"
 #include "NodeDB.h"
 #include "PowerFSM.h"
+#include "SPILock.h"
 #include "Throttle.h"
 #include "buzz/buzz.h"
 #include "configuration.h"
 #include "main.h"
 #include "meshUtils.h"
 #include "sleep.h"
+
+unsigned int deviceRunning = 0;
 
 // Working USB detection for powered/charging states on the RAK platform
 #ifdef NRF_APM
@@ -751,21 +754,47 @@ void Power::readPowerStatus()
     // If we have a battery at all and it is less than 0%, force deep sleep if we have more than 10 low readings in
     // a row. NOTE: min LiIon/LiPo voltage is 2.0 to 2.5V, current OCV min is set to 3100 that is large enough.
     //
-    if (batteryLevel && powerStatus2.getHasBattery() && !powerStatus2.getHasUSB()) {
-        if (batteryLevel->getBattVoltage() < OCV[NUM_OCV_POINTS - 1]) {
-            low_voltage_counter++;
-            LOG_DEBUG("Low voltage counter: %d/10", low_voltage_counter);
-            if (low_voltage_counter > 10) {
-#ifdef ARCH_NRF52
-                // We can't trigger deep sleep on NRF52, it's freezing the board
-                LOG_DEBUG("Low voltage detected, but not trigger deep sleep");
-#else
-                LOG_INFO("Low voltage detected, trigger deep sleep");
-                powerFSM.trigger(EVENT_LOW_BATTERY);
-#endif
+
+    /*
+        if (batteryLevel && powerStatus2.getHasBattery() && !powerStatus2.getHasUSB()) {
+            if (batteryLevel->getBattVoltage() < OCV[NUM_OCV_POINTS - 1]) {
+                low_voltage_counter++;
+                LOG_DEBUG("Low voltage counter: %d/10", low_voltage_counter);
+                if (low_voltage_counter > 10) {
+    #ifdef ARCH_NRF52
+                    // We can't trigger deep sleep on NRF52, it's freezing the board
+                    LOG_DEBUG("Low voltage detected, but not trigger deep sleep");
+    #else
+                    LOG_INFO("Low voltage detected, trigger deep sleep");
+                    powerFSM.trigger(EVENT_LOW_BATTERY);
+    #endif
+                }
+            } else {
+                low_voltage_counter = 0;
             }
-        } else {
-            low_voltage_counter = 0;
+        }
+    */
+
+    if (deviceRunning) {
+        uint8_t status[3] = {0x00, 0x00, 0x00};
+
+        spiLock->lock();
+        digitalWrite(LORA_CS, LOW);
+        SPI.transfer(0x17);             /* GetDeviceErrors */
+        status[0] = SPI.transfer(0x00); /* Status */
+        status[1] = SPI.transfer(0x00); /* OpError */
+        status[2] = SPI.transfer(0x00); /* OpError */
+        digitalWrite(LORA_CS, HIGH);
+        spiLock->unlock();
+
+        LOG_INFO("SX1262 Status register: 0x%x 0x%x 0x%x", status[0], status[1], status[2]);
+
+        /* status[1] == 0x00
+         * status[2] == 0x00
+         * Is the standard status if everything is working */
+        if (status[1] != 0x00 || status[2] != 0x00) {
+            LOG_ERROR("Error bit in Status/GetDeviceError is set. Restarting device.");
+            ESP.restart();
         }
     }
 }
