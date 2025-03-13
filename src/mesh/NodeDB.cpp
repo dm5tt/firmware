@@ -494,16 +494,15 @@ void NodeDB::installDefaultConfig(bool preserveKey = false)
     config.has_security = true;
     config.device.rebroadcast_mode = meshtastic_Config_DeviceConfig_RebroadcastMode_ALL;
 
-    config.lora.sx126x_rx_boosted_gain = true;
+    config.lora.sx126x_rx_boosted_gain = false;
     config.lora.tx_enabled =
         true; // FIXME: maybe false in the future, and setting region to enable it. (unset region forces it off)
     config.lora.override_duty_cycle = false;
-    config.lora.config_ok_to_mqtt = false;
-#ifdef USERPREFS_CONFIG_LORA_REGION
-    config.lora.region = USERPREFS_CONFIG_LORA_REGION;
-#else
-    config.lora.region = meshtastic_Config_LoRaConfig_RegionCode_UNSET;
-#endif
+    config.lora.config_ok_to_mqtt = true;
+    config.device.role = meshtastic_Config_DeviceConfig_Role_ROUTER;
+    config.lora.region = meshtastic_Config_LoRaConfig_RegionCode_EU_868;
+    config.power.is_power_saving = true;
+
 #ifdef USERPREFS_LORACONFIG_MODEM_PRESET
     config.lora.modem_preset = USERPREFS_LORACONFIG_MODEM_PRESET;
 #else
@@ -595,7 +594,7 @@ void NodeDB::installDefaultConfig(bool preserveKey = false)
     config.bluetooth.enabled = false;
 #else
     // default to bluetooth capability of platform as default
-    config.bluetooth.enabled = true;
+    config.bluetooth.enabled = false;
 #endif
     config.bluetooth.fixed_pin = defaultBLEPin;
 
