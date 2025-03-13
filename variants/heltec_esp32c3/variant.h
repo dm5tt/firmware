@@ -1,15 +1,15 @@
-#define BUTTON_PIN 9
-
 // LED pin on HT-DEV-ESP_V2 and HT-DEV-ESP_V3
 // https://resource.heltec.cn/download/HT-CT62/HT-CT62_Reference_Design.pdf
 // https://resource.heltec.cn/download/HT-DEV-ESP/HT-DEV-ESP_V3_Sch.pdf
-#define LED_PIN 2      // LED
-#define LED_STATE_ON 1 // State when LED is lit
-
 #define HAS_SCREEN 0
 #define HAS_GPS 0
 #undef GPS_RX_PIN
 #undef GPS_TX_PIN
+
+#define BATTERY_PIN 1
+#define ADC_CHANNEL ADC1_GPIO1_CHANNEL
+#define ADC_MULTIPLIER 2 * 1.02
+#define BATTERY_SENSE_SAMPLES 5
 
 #define USE_SX1262
 #define LORA_SCK 10
