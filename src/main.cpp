@@ -1384,6 +1384,8 @@ void scannerToSensorsMap(const std::unique_ptr<ScanI2CTwoWire> &i2cScanner, Scan
 }
 #endif
 
+extern unsigned int deviceRunning;
+
 #ifndef PIO_UNIT_TESTING
 void loop()
 {
@@ -1408,6 +1410,8 @@ void loop()
     service->loop();
 
     long delayMsec = mainController.runOrDelay();
+
+    deviceRunning = 1;
 
     // We want to sleep as long as possible here - because it saves power
     if (!runASAP && loopCanSleep()) {
