@@ -499,23 +499,20 @@ void NodeDB::installDefaultConfig(bool preserveKey = false)
     config.has_bluetooth = (HAS_BLUETOOTH ? true : false);
     config.has_security = true;
     config.device.rebroadcast_mode = meshtastic_Config_DeviceConfig_RebroadcastMode_ALL;
-
+    config.device.role = meshtastic_Config_DeviceConfig_Role_ROUTER;
     config.lora.sx126x_rx_boosted_gain = true;
     config.lora.tx_enabled =
         true; // FIXME: maybe false in the future, and setting region to enable it. (unset region forces it off)
-    config.lora.override_duty_cycle = false;
-    config.lora.config_ok_to_mqtt = false;
-#ifdef USERPREFS_CONFIG_LORA_REGION
-    config.lora.region = USERPREFS_CONFIG_LORA_REGION;
-#else
-    config.lora.region = meshtastic_Config_LoRaConfig_RegionCode_UNSET;
-#endif
+    config.lora.override_duty_cycle = true;
+    config.lora.config_ok_to_mqtt = true;
+    config.lora.region = meshtastic_Config_LoRaConfig_RegionCode_EU_868;
+    config.power.is_power_saving = true;
 #ifdef USERPREFS_LORACONFIG_MODEM_PRESET
     config.lora.modem_preset = USERPREFS_LORACONFIG_MODEM_PRESET;
 #else
     config.lora.modem_preset = meshtastic_Config_LoRaConfig_ModemPreset_LONG_FAST;
 #endif
-    config.lora.hop_limit = HOP_RELIABLE;
+    config.lora.hop_limit = 5;
 #ifdef USERPREFS_CONFIG_LORA_IGNORE_MQTT
     config.lora.ignore_mqtt = USERPREFS_CONFIG_LORA_IGNORE_MQTT;
 #else
@@ -907,7 +904,7 @@ void NodeDB::installDefaultDeviceState()
 #ifdef USERPREFS_CONFIG_OWNER_LONG_NAME
     snprintf(owner.long_name, sizeof(owner.long_name), (const char *)USERPREFS_CONFIG_OWNER_LONG_NAME);
 #else
-    snprintf(owner.long_name, sizeof(owner.long_name), "Meshtastic %04x", getNodeNum() & 0x0ffff);
+    snprintf(owner.long_name, sizeof(owner.long_name), "oess868-v26-dachsol", getNodeNum() & 0x0ffff);
 #endif
 #ifdef USERPREFS_CONFIG_OWNER_SHORT_NAME
     snprintf(owner.short_name, sizeof(owner.short_name), (const char *)USERPREFS_CONFIG_OWNER_SHORT_NAME);
